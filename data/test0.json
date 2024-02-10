@@ -1,0 +1,11 @@
+{
+	"_comment": "Simple data format based on jmesh and intended for triangle.exe data",
+	"vertices":[
+		[0,0],
+		[0,-1]
+	],
+	"edges":[
+		[0,1]
+	],
+	"pinned":[0]
+}
