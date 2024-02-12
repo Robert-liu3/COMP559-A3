@@ -8,7 +8,7 @@ import polyscope as ps
 class particle_system:
 	def __init__(self, file_name):
 		self.name = file_name
-		data = json.load(open(file_name, 'r'))
+		data = json.load(open("..\\data\\" + file_name, 'r'))
 		self.x = np.array(data['vertices'],dtype='f4')
 		self.edges = np.array(data['edges'],dtype='i4') 
 		self.pinned = np.array(data['pinned'])	# list of pinned particles
