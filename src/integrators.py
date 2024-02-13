@@ -25,6 +25,14 @@ class phase_space_integrator:
 
 def forward_euler(p0, h, derivs): 
     # TODO don't just return the inputs
+    dp = derivs(p0) #is this how your suppose to use derivs? how do you use it?
+    p1 = p0 + h * dp 
+    self.x = p1 #am I suppose to update self.x?
+
+    #how do I use these two functions?
+    # self.ps_verts.update_point_positions(self.x) 
+	# self.ps_curves.update_node_positions(self.x)
+
     return p0
 
 def midpoint(p0, h, derivs):
