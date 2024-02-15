@@ -25,40 +25,53 @@ class phase_space_integrator:
 
 def forward_euler(p0, h, derivs): 
     # TODO don't just return the inputs
-    dp = derivs(p0) #is this how your suppose to use derivs? how do you use it?
-    p1 = p0 + h * dp 
-    self.x = p1 #am I suppose to update self.x?
+    p1 = p0 + h * derivs(p0) 
+    # self.x = p1 am I suppose to update self.x?
 
     #how do I use these two functions?
     # self.ps_verts.update_point_positions(self.x) 
 	# self.ps_curves.update_node_positions(self.x)
 
-    return p0
+    return p1
 
 def midpoint(p0, h, derivs):
     # TODO don't just return the inputs
-    return p0
+    p1 = p0 + h * derivs(p0+(1/2)*h*derivs(p0))
+    
+    return p1
 
 def modified_midpoint(p0, h, derivs):
     # TODO don't just return the inputs
-    return p0
+    p1 = p0 + h * derivs(p0+(2/3)*h*derivs(p0))
+
+    return p1
 
 def rk4(p0, h, derivs):
     # TODO don't just return the inputs
-    return p0
+    k1 = derivs(p0)
+    k2 = derivs(p0+(h/2)*k1)
+    k3 = derivs(p0+(h/2)*k2)
+    k4 = derivs(p0+h*k3)
+    p1 = p0 + (h/6)*(k1+2*k2+2*k3+k4)
+    return p1
 
 class symplectic_euler:
     name = "Symplectic Euler"
     @staticmethod
     def step(x0,v0, h, system):
         # TODO: don't just return the inputs
-        return x0, v0
+        v1 = v0 + h * system.derivs(x0)
+        x1 = x0 + h * v1 
+        return x1, v1
 
 class backward_euler:
     name = "Backward Euler"
     @staticmethod
     def step(x0, v0, h, system):
         # TODO: don't just return the inputs
+        #linealize and write a linear system
+        #use conjugate gradient to solve the linear system
+        #make the system the cloff 
         return x0, v0
 
 integration_methods = [
