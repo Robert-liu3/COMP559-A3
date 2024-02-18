@@ -52,10 +52,13 @@ class particle_system:
 	def compute_forces(self, x, v):
 		# TODO: compute and return forces (gravity, spring, damping)
 		a_minus_b = x[self.edges[:,0]] - x[self.edges[:,1]]
-		a_minus_b_normal = np.linalg.norm(a_minus_b)
-
+		print("rest length: ", self.rest_length)
+		a_minus_b_normal = np.linalg.norm(a_minus_b, axis=1)
+		print("a_minus_b_normal: ", a_minus_b_normal)
+		a_minus_b_normal_reshaped = a_minus_b_normal.reshape(-1, 1)
 		#is stiffness the material stiffness?
-		spring_forces = self.stiffness * (a_minus_b_normal - self.rest_length) * a_minus_b / a_minus_b_normal
+		displacement = (a_minus_b_normal - self.rest_length).reshape(-1, 1)
+		spring_forces = self.stiffness * displacement * a_minus_b / a_minus_b_normal_reshaped
 		print("spring forces: ", spring_forces)
 
 		#i need to calculate the relative velocity of both particles?
@@ -66,7 +69,7 @@ class particle_system:
 		gravity_forces = self.gravity * self.mass
 		print("gravity forces: ", gravity_forces)
 		gravity_force_vector = np.zeros((len(self.x), 2))
-		gravity_force_vector[:, 1] = gravity_forces
+		gravity_force_vector[:, 1] = gravity_forces.shape[0]
 		print("gravity force vector: ", gravity_force_vector)
 
 		total_edge_forces = np.zeros_like(gravity_force_vector)
