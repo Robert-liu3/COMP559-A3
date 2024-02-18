@@ -56,15 +56,24 @@ class particle_system:
 
 		#is stiffness the material stiffness?
 		spring_forces = self.stiffness * (a_minus_b_normal - self.rest_length) * a_minus_b / a_minus_b_normal
+		print("spring forces: ", spring_forces)
 
 		#i need to calculate the relative velocity of both particles?
 		damping_forces = -self.damping * (v[self.edges[:,0]] - v[self.edges[:,1]])
+		print("damping forces: ", damping_forces)
 
+		print("this is the mass: ", self.mass)
 		gravity_forces = self.gravity * self.mass
-		gravity_force_vector = np.array([0, gravity_forces])
+		print("gravity forces: ", gravity_forces)
+		gravity_force_vector = np.zeros((len(self.x), 2))
+		gravity_force_vector[:, 1] = gravity_forces
+		print("gravity force vector: ", gravity_force_vector)
 
+		total_edge_forces = np.zeros_like(gravity_force_vector)
+		np.add.at(total_edge_forces, self.edges[:, 0], spring_forces + damping_forces)
+		np.subtract.at(total_edge_forces, self.edges[:, 1], spring_forces + damping_forces)
 
-		return spring_forces + gravity_force_vector + damping_forces
+		return gravity_force_vector + total_edge_forces
 	
 	def derivs(self, x, v):
 		f = self.compute_forces(x, v)

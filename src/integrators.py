@@ -71,7 +71,8 @@ class backward_euler:
         # TODO: don't just return the inputs
         #linealize and write a linear system
         #use conjugate gradient to solve the linear system
-        #make the system the cloff 
+        #make the system the cloff
+         
         return x0, v0
 
 integration_methods = [
