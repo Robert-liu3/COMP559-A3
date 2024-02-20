@@ -60,7 +60,7 @@ class symplectic_euler:
     @staticmethod
     def step(x0,v0, h, system):
         # TODO: don't just return the inputs
-        v1 = v0 + h * system.derivs(x0)
+        v1 = v0 + h * system.derivs(x0, v0)
         x1 = x0 + h * v1 
         return x1, v1
 
