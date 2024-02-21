@@ -119,20 +119,20 @@ class particle_system:
 			a_minus_b = x[self.edges[i,0]] - x[self.edges[i,1]]
 			a_minus_b_normal = np.linalg.norm(a_minus_b)
 			displacement = a_minus_b_normal - self.rest_length[i]
-			print("rest length: ", self.rest_length)
 			spring_forces = self.stiffness * displacement * a_minus_b / a_minus_b_normal
-			damping_forces = -self.damping * (v[self.edges[i,0]] - v[self.edges[i,1]])
 
-			force_particle[self.edges[i,0]] += (spring_forces + damping_forces)
+			force_particle[self.edges[i,0]] += spring_forces
 			# Initialize an empty matrix
 
-			force_particle[self.edges[i,1]] -= (spring_forces + damping_forces)
+			force_particle[self.edges[i,1]] -= spring_forces
 
 
-
+		damping_forces = -self.damping *v
 		gravity_force_vector = np.zeros((len(self.x), 2))
 		gravity_force_vector[:, 1] = self.gravity * self.mass[:,1]
-		force_particle += gravity_force_vector
+		force_particle += gravity_force_vector + damping_forces
+
+
 
 		# a_minus_b = x[self.edges[:,0]] - x[self.edges[:,1]]
 		# # print("rest length: ", self.rest_length)
@@ -145,7 +145,7 @@ class particle_system:
 		# # print("spring forces: ", spring_forces)
 
 		# #i need to calculate the relative velocity of both particles?
-		# damping_forces = -self.damping * (v[self.edges[:,0]] - v[self.edges[:,1]])
+		# damping_forces = -self.damping * v
 		# # print("damping forces: ", damping_forces)
 
 		# # print("this is the mass: ", self.mass)
@@ -160,6 +160,8 @@ class particle_system:
 		# np.subtract.at(total_edge_forces, self.edges[:, 1], spring_forces + damping_forces)
 
 		# print("damping matrix", self.compute_stiffness_matrix(x))
+
+		# force_particle = total_edge_forces + gravity_force_vector
 
 		return force_particle
 	
