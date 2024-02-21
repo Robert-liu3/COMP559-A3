@@ -138,7 +138,7 @@ class particle_system:
 		np.add.at(total_edge_forces, self.edges[:, 0], spring_forces + damping_forces)
 		np.subtract.at(total_edge_forces, self.edges[:, 1], spring_forces + damping_forces)
 
-		print("damping matrix", self.compute_stiffness_matrix(x))
+		# print("damping matrix", self.compute_stiffness_matrix(x))
 
 		return gravity_force_vector + total_edge_forces
 	

@@ -72,8 +72,15 @@ class backward_euler:
         #linealize and write a linear system
         #use conjugate gradient to solve the linear system
         #make the system the cloff
-         
-        return x0, v0
+        stiffness_matrix = system.compute_stiffness_matrix(x0)
+        ext_forces = system.compute_forces(x0, v0)
+        print("this is mass: ", system.mass)
+        mass_matrix = np.eye(system.n)
+        numerator = mass_matrix*v0 + h*ext_forces   #what would my fsi be
+        denominator = mass_matrix + (h**2)*stiffness_matrix
+        v1 = numerator/denominator
+        x1 = x0 + h*v1
+        return x1, v1
 
 integration_methods = [
     symplectic_euler(),
