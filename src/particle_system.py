@@ -42,32 +42,62 @@ class particle_system:
 		# TODO: add any other setup code you need here!
 		
 	def compute_stiffness_matrix(self,x):
+
+		m = self.x.shape[0]
+		stiffness_matrix = np.zeros((2*m, 2*m))
+		print("stiffness matrix: ", stiffness_matrix.shape)
 		# TODO: you probably want to implement this (unless you are using CG to solve Ax=b without assembly)
 		# Initialize an empty matrix
 
-		a_minus_b = x[self.edges[:,0]] - x[self.edges[:,1]]
-		a_minus_b_normal = np.linalg.norm(a_minus_b, axis=1)
-		a_minus_b_normal_reshaped = a_minus_b_normal.reshape(-1, 1)
-		k = self.stiffness
-		lo = self.rest_length
+		# a_minus_b = x[self.edges[:,0]] - x[self.edges[:,1]]
+		# a_minus_b_normal = np.linalg.norm(a_minus_b, axis=1)
+		# a_minus_b_normal_reshaped = a_minus_b_normal.reshape(-1, 1)
+		# k = self.stiffness
+		# lo = self.rest_length
 
-		first_term = -k*(a_minus_b)*(a_minus_b).T/(a_minus_b_normal_reshaped**3)
-		second_term = k*((lo/(a_minus_b_normal_reshaped)) - 1)*np.eye(len(self.edges))
+		# first_term = -k*(a_minus_b)*(a_minus_b).T/(a_minus_b_normal_reshaped**3)
+		# second_term = k*((lo/(a_minus_b_normal_reshaped)) - 1)*np.eye(len(self.edges))
 
-		fa_da = first_term + second_term
-		fa_db = -fa_da
-		fb_da = -fa_da
-		fb_db = fa_da
+		# fa_da = first_term + second_term #0,0+1 0,0+1
+		# fa_db = -fa_da #0,0+1 1,1+1
+		# fb_da = -fa_da #1,1+1 0,1+1
+		# fb_db = fa_da #1,1+1 1,1+1.
 
-		print("matrix size is: ", fa_da.shape[0])
-		m = fa_da.shape[0]
-		matrix_size = m*2+2
-		stiffness_matrix = np.zeros((matrix_size, matrix_size))
-		stiffness_matrix[1:m+1, 1:m+1] = fa_da
-		stiffness_matrix[1:m+1, m+1:m+3] = fa_db
-		stiffness_matrix[m+1:m+3, 1:m+1] = fb_da
-		stiffness_matrix[m+1:m+3, m+1:m+3] = fb_db
-		
+		for i in range(len(self.edges)):
+			# Get the indices of the particles at the ends of the spring
+			a_minus_b = np.reshape(x[self.edges[i,0]] - x[self.edges[i,1]], (1,-1))
+			#make sure its column vector by a row vector
+			#matrix calculation website to generate code for the derivatives
+			# print("a_minus_b: ", a_minus_b.shape)
+			# print("a_minus_b_transpose: ", (a_minus_b.T).shape)
+			# print("aminusb dot aminusb: ", ((a_minus_b.T)@(a_minus_b)))
+			a_minus_b_normal = np.linalg.norm(a_minus_b)
+			k = self.stiffness
+			lo = self.rest_length
+			first_term = -k*lo*(a_minus_b.T)@(a_minus_b)/(a_minus_b_normal**3)
+			# print("first term: ", first_term)
+			second_term = k*((lo/(a_minus_b_normal)) - 1)*np.eye(len(self.edges))
+			# print("second term: ", second_term)
+			fa_da = first_term + second_term #0,0+1 0,0+1
+			# print("fa_da: ", fa_da)
+			fa_db = -fa_da #0,0+1 1,1+1
+			fb_da = -fa_da #1,1+1 0,1+1
+			fb_db = fa_da #1,1+1 1,1+1
+
+			index_a = self.edges[i,0]
+			# print("index a: ", index_a)
+			index_a_first = 2*index_a
+			index_a_second = 2*(index_a + 1)
+
+			index_b = self.edges[i,1]
+			index_b_first = 2*index_b
+			index_b_second = 2*(index_b + 1)
+			# print("index b_first: ", index_b, "index_b_second: ", index_b_second)
+
+			stiffness_matrix[index_a_first:index_a_second, index_a_first:index_a_second] = fa_da
+			stiffness_matrix[index_a_first:index_a_second, index_b_first:index_b_second] = fa_db
+			stiffness_matrix[index_b_first:index_b_second, index_a_first:index_a_second] = fb_da
+			stiffness_matrix[index_b_first:index_b_second, index_b_first:index_b_second] = fb_db
 
 
 
@@ -116,18 +146,19 @@ class particle_system:
 		force_particle = np.zeros((len(self.x), 2))
 
 		for i in range(len(self.edges)):
-			a_minus_b = x[self.edges[i,0]] - x[self.edges[i,1]]
-			a_minus_b_normal = np.linalg.norm(a_minus_b)
-			displacement = a_minus_b_normal - self.rest_length[i]
-			spring_forces = self.stiffness * displacement * a_minus_b / a_minus_b_normal
+			# a_minus_b = x[self.edges[i,0]] - x[self.edges[i,1]]
+			# a_minus_b_normal = np.linalg.norm(a_minus_b)
+			# displacement = a_minus_b_normal - self.rest_length[i]
+			# spring_forces = self.stiffness * displacement * a_minus_b / a_minus_b_normal
+
+			spring_forces = -self.stiffness * (np.linalg.norm(x[self.edges[i,0]] - x[self.edges[i,1]]) - self.rest_length[i]) * (x[self.edges[i,0]] - x[self.edges[i,1]]) / np.linalg.norm(x[self.edges[i,0]] - x[self.edges[i,1]])
 
 			force_particle[self.edges[i,0]] += spring_forces
 			# Initialize an empty matrix
 
 			force_particle[self.edges[i,1]] -= spring_forces
 
-
-		damping_forces = -self.damping *v
+		damping_forces = -self.damping*v
 		gravity_force_vector = np.zeros((len(self.x), 2))
 		gravity_force_vector[:, 1] = self.gravity * self.mass[:,1]
 		force_particle += gravity_force_vector + damping_forces
@@ -141,12 +172,13 @@ class particle_system:
 		# a_minus_b_normal_reshaped = a_minus_b_normal.reshape(-1, 1)
 
 		# displacement = (a_minus_b_normal - self.rest_length).reshape(-1, 1)
-		# spring_forces = self.stiffness * displacement * a_minus_b / a_minus_b_normal_reshaped
-		# # print("spring forces: ", spring_forces)
+		# spring_forces = -self.stiffness * displacement * a_minus_b / a_minus_b_normal_reshaped
+		# print("spring forces: ", spring_forces)
 
 		# #i need to calculate the relative velocity of both particles?
 		# damping_forces = -self.damping * v
-		# # print("damping forces: ", damping_forces)
+
+		# print("damping forces: ", damping_forces)
 
 		# # print("this is the mass: ", self.mass)
 		# gravity_forces = self.gravity * self.mass

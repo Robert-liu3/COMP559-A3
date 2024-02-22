@@ -72,11 +72,16 @@ class backward_euler:
         #linealize and write a linear system
         #use conjugate gradient to solve the linear system
         #make the system the cloff
+        x0_flatten = x0.flatten().T
+        v0_flatten = v0.flatten().T
         stiffness_matrix = system.compute_stiffness_matrix(x0)
         ext_forces = system.compute_forces(x0, v0)
         print("this is mass: ", system.mass)
         mass_matrix = np.eye(system.n)
-        numerator = mass_matrix*v0 + h*ext_forces   #what would my fsi be
+        numerator = mass_matrix*v0_flatten + h*ext_forces   #what would my fsi be
+        print("this is the stiffness matrix: ", stiffness_matrix)
+        print("this is the mass matrix: ", mass_matrix)
+        print("this is h: ", h)
         denominator = mass_matrix + (h**2)*stiffness_matrix
         v1 = numerator/denominator
         x1 = x0 + h*v1
