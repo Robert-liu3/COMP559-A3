@@ -64,21 +64,35 @@ class backward_euler:
     @staticmethod
     def step(x0, v0, h, system):
         mass_matrix = system.M
-        ext_forces = system.compute_forces(x0, v0)
-        v0_flatten = v0.flatten()
-        damping = -system.damping*v0_flatten
-        print("this is v0: ", v0_flatten)
+        ext_forces = system.compute_forces(x0, v0).flatten()
+        v0_og = v0.copy()
+
+        damping = system.damping*np.eye(len(mass_matrix))
         stiffness_matrix = system.compute_stiffness_matrix(x0)
 
+        v0_flatten = v0.flatten()
+        b = mass_matrix@v0_flatten + h*ext_forces #what would my fsi be
+        A = mass_matrix - h*damping - (h**2)*stiffness_matrix
+
+        pinned = []
         for i in system.pinned:
-            ext_forces[i] = 0
-            damping[i] = 0
-            v0_flatten[i] = 0
+            pinned.append(2*i)
+            pinned.append(2*i+1)
+            
+        b = np.delete(b, pinned, axis=0)
+        # b = np.delete(b, pinned, axis=0)
+        A = np.delete(A, pinned, axis=0)
+        A = np.delete(A, pinned, axis=1)
+        # A = np.delete(A, pinned, axis=0)
+        # A = np.delete(A, pinned, axis=1)
 
-        numerator = mass_matrix@v0_flatten + h*ext_forces.flatten() #what would my fsi be
-        denominator = mass_matrix - h*damping - (h**2)*stiffness_matrix
 
-        v1 = np.linalg.solve(denominator, numerator).reshape(v0.shape)
+        v1 = np.linalg.solve(A, b)
+        for i in system.pinned:
+            v1 = np.insert(v1, i, 0, axis=0)
+            v1 = np.insert(v1, i+1, 0, axis=0)
+        v1 = v1.reshape(v0_og.shape)
+        
         x1 = x0 + h*v1
         return x1, v1
 

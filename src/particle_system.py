@@ -47,29 +47,55 @@ class particle_system:
 		stiffness_matrix = np.zeros((2*m, 2*m))
 
 		for i in range(len(self.edges)):
-			if i in self.pinned:
-				continue
 			k = self.stiffness
 			lo = self.rest_length[i]
 			fa_da = self.gradientFunc(x[self.edges[i,0]], x[self.edges[i,1]], k, lo)
-			fa_db = -fa_da #0,0+1 1,1+1
-			fb_da = -fa_da #1,1+1 0,1+1
-			fb_db = fa_da #1,1+1 1,1+1
+			fa_db = -fa_da # self.gradientFunc(x[self.edges[i,0]], x[self.edges[i,1]], k, lo) #0,0+1 1,1+1
+			fb_da = -fa_da#1,1+1 0 	,1+1
+			fb_db = -fa_db #1,1+1 1,1+1
 
 			index_a = self.edges[i,0]
 			index_a_first = 2*index_a
-			index_a_second = 2*(index_a + 1)
+			index_a_second = 2*(index_a+1)
 
 			index_b = self.edges[i,1]
 			index_b_first = 2*index_b
-			index_b_second = 2*(index_b + 1)
+			index_b_second = 2*(index_b +1)
 
 			stiffness_matrix[index_a_first:index_a_second, index_a_first:index_a_second] += fa_da
 			stiffness_matrix[index_a_first:index_a_second, index_b_first:index_b_second] += fa_db
 			stiffness_matrix[index_b_first:index_b_second, index_a_first:index_a_second] += fb_da
 			stiffness_matrix[index_b_first:index_b_second, index_b_first:index_b_second] += fb_db
 
+
+
 		return stiffness_matrix
+	
+	def NegativeGradientFunc(self, A, B, k, l):
+		assert isinstance(A, np.ndarray)
+		dim = A.shape
+		assert len(dim) == 1
+		A_rows = dim[0]
+		assert isinstance(B, np.ndarray)
+		dim = B.shape
+		assert len(dim) == 1
+		B_rows = dim[0]
+		if isinstance(k, np.ndarray):
+			dim = k.shape
+			assert dim == (1, )
+		if isinstance(l, np.ndarray):
+			dim = l.shape
+			assert dim == (1, )
+		assert B_rows == A_rows
+
+		t_0 = -(A - B)
+		t_1 = np.linalg.norm(t_0)
+		t_2 = (k * (t_1 - l))
+		T_3 = np.outer(t_0, t_0)
+		t_4 = (t_2 / t_1)
+		gradient = -((((k / (t_1 ** 2)) * T_3) - ((t_2 / (t_1 ** 3)) * T_3)) + (t_4 * np.eye(B_rows, A_rows)))
+
+		return gradient
 	
 	def gradientFunc(self, A, B, k, l):
 		assert isinstance(A, np.ndarray)
