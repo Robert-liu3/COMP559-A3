@@ -43,81 +43,59 @@ class particle_system:
 		
 	def compute_stiffness_matrix(self,x):
 
-		m = self.x.shape[0]
+		m = self.n
 		stiffness_matrix = np.zeros((2*m, 2*m))
-		print("stiffness matrix: ", stiffness_matrix.shape)
-		# TODO: you probably want to implement this (unless you are using CG to solve Ax=b without assembly)
-		# Initialize an empty matrix
-
-		# a_minus_b = x[self.edges[:,0]] - x[self.edges[:,1]]
-		# a_minus_b_normal = np.linalg.norm(a_minus_b, axis=1)
-		# a_minus_b_normal_reshaped = a_minus_b_normal.reshape(-1, 1)
-		# k = self.stiffness
-		# lo = self.rest_length
-
-		# first_term = -k*(a_minus_b)*(a_minus_b).T/(a_minus_b_normal_reshaped**3)
-		# second_term = k*((lo/(a_minus_b_normal_reshaped)) - 1)*np.eye(len(self.edges))
-
-		# fa_da = first_term + second_term #0,0+1 0,0+1
-		# fa_db = -fa_da #0,0+1 1,1+1
-		# fb_da = -fa_da #1,1+1 0,1+1
-		# fb_db = fa_da #1,1+1 1,1+1.
 
 		for i in range(len(self.edges)):
-			# Get the indices of the particles at the ends of the spring
-			a_minus_b = np.reshape(x[self.edges[i,0]] - x[self.edges[i,1]], (1,-1))
-			#make sure its column vector by a row vector
-			#matrix calculation website to generate code for the derivatives
-			# print("a_minus_b: ", a_minus_b.shape)
-			# print("a_minus_b_transpose: ", (a_minus_b.T).shape)
-			# print("aminusb dot aminusb: ", ((a_minus_b.T)@(a_minus_b)))
-			a_minus_b_normal = np.linalg.norm(a_minus_b)
+			if i in self.pinned:
+				continue
 			k = self.stiffness
-			lo = self.rest_length
-			first_term = -k*lo*(a_minus_b.T)@(a_minus_b)/(a_minus_b_normal**3)
-			# print("first term: ", first_term)
-			second_term = k*((lo/(a_minus_b_normal)) - 1)*np.eye(len(self.edges))
-			# print("second term: ", second_term)
-			fa_da = first_term + second_term #0,0+1 0,0+1
-			# print("fa_da: ", fa_da)
+			lo = self.rest_length[i]
+			fa_da = self.gradientFunc(x[self.edges[i,0]], x[self.edges[i,1]], k, lo)
 			fa_db = -fa_da #0,0+1 1,1+1
 			fb_da = -fa_da #1,1+1 0,1+1
 			fb_db = fa_da #1,1+1 1,1+1
 
 			index_a = self.edges[i,0]
-			# print("index a: ", index_a)
 			index_a_first = 2*index_a
 			index_a_second = 2*(index_a + 1)
 
 			index_b = self.edges[i,1]
 			index_b_first = 2*index_b
 			index_b_second = 2*(index_b + 1)
-			# print("index b_first: ", index_b, "index_b_second: ", index_b_second)
 
-			stiffness_matrix[index_a_first:index_a_second, index_a_first:index_a_second] = fa_da
-			stiffness_matrix[index_a_first:index_a_second, index_b_first:index_b_second] = fa_db
-			stiffness_matrix[index_b_first:index_b_second, index_a_first:index_a_second] = fb_da
-			stiffness_matrix[index_b_first:index_b_second, index_b_first:index_b_second] = fb_db
-
-
-
-		# stiffness_matrix = np.zeros((self.n, self.n))
-
-		# # For each spring in the system
-		# for i in range(len(self.edges)):
-		# 	# Get the indices of the particles at the ends of the spring
-		# 	a, b = self.edges[i]
-
-		# 	# Compute the stiffness coefficient for this spring
-		# 	k = self.stiffness[i]
-
-		# 	# Update the stiffness matrix
-		# 	stiffness_matrix[a, a] += k
-		# 	stiffness_matrix[b, b] += k
-		# 	stiffness_matrix[a, b] -= k
-		# 	stiffness_matrix[b, a] -= k
+			stiffness_matrix[index_a_first:index_a_second, index_a_first:index_a_second] += fa_da
+			stiffness_matrix[index_a_first:index_a_second, index_b_first:index_b_second] += fa_db
+			stiffness_matrix[index_b_first:index_b_second, index_a_first:index_a_second] += fb_da
+			stiffness_matrix[index_b_first:index_b_second, index_b_first:index_b_second] += fb_db
 
 		return stiffness_matrix
+	
+	def gradientFunc(self, A, B, k, l):
+		assert isinstance(A, np.ndarray)
+		dim = A.shape
+		assert len(dim) == 1
+		A_rows = dim[0]
+		assert isinstance(B, np.ndarray)
+		dim = B.shape
+		assert len(dim) == 1
+		B_rows = dim[0]
+		if isinstance(k, np.ndarray):
+			dim = k.shape
+			assert dim == (1, )
+		if isinstance(l, np.ndarray):
+			dim = l.shape
+			assert dim == (1, )
+		assert B_rows == A_rows
+
+		t_0 = (A - B)
+		t_1 = np.linalg.norm(t_0)
+		t_2 = (k * (t_1 - l))
+		T_3 = np.outer(t_0, t_0)
+		t_4 = (t_2 / t_1)
+		gradient = -((((k / (t_1 ** 2)) * T_3) - ((t_2 / (t_1 ** 3)) * T_3)) + (t_4 * np.eye(B_rows, A_rows)))
+
+		return gradient
 
 	def compute_damping_matrix(self,x):
 		# TODO: you probably want to implement this (unless you are using CG to solve Ax=b without assembly)
@@ -194,6 +172,8 @@ class particle_system:
 		# print("damping matrix", self.compute_stiffness_matrix(x))
 
 		# force_particle = total_edge_forces + gravity_force_vector
+
+		print("force particle: ", force_particle)
 
 		return force_particle
 	

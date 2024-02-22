@@ -72,18 +72,38 @@ class backward_euler:
         #linealize and write a linear system
         #use conjugate gradient to solve the linear system
         #make the system the cloff
-        x0_flatten = x0.flatten().T
-        v0_flatten = v0.flatten().T
-        stiffness_matrix = system.compute_stiffness_matrix(x0)
+        mass_matrix = system.M
         ext_forces = system.compute_forces(x0, v0)
-        print("this is mass: ", system.mass)
-        mass_matrix = np.eye(system.n)
-        numerator = mass_matrix*v0_flatten + h*ext_forces   #what would my fsi be
+        
+        # deleted_rows = {}
+
+        # for i in system.pinned:
+        #     deleted_rows[i] = {'x0': x0[i], 'v0': v0[i], 'mass_matrix': mass_matrix[i]}
+        #     v0 = np.delete(v0, i, axis=0)
+        #     mass_matrix = np.delete(mass_matrix, i, axis=0)
+        #     ext_forces = np.delete(ext_forces, i, axis=0)
+        
+        v0_flatten = v0.flatten()
+        damping = -system.damping*v0_flatten
+        print("this is v0: ", v0_flatten)
+        stiffness_matrix = system.compute_stiffness_matrix(x0)
+
+        for i in system.pinned:
+            ext_forces[i] = 0
+            damping[i] = 0
+            v0_flatten[i] = 0
+
+        numerator = mass_matrix@v0_flatten + h*ext_forces.flatten() #what would my fsi be
         print("this is the stiffness matrix: ", stiffness_matrix)
         print("this is the mass matrix: ", mass_matrix)
         print("this is h: ", h)
-        denominator = mass_matrix + (h**2)*stiffness_matrix
-        v1 = numerator/denominator
+        print("this is damping: ", damping)
+        denominator = mass_matrix - h*damping - (h**2)*stiffness_matrix
+        print("this is denominator: ", denominator)
+
+        v1 = np.linalg.solve(denominator, numerator).reshape(v0.shape)
+
+        print("this is v1: ", v1)
         x1 = x0 + h*v1
         return x1, v1
 
