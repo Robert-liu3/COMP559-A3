@@ -124,10 +124,6 @@ class particle_system:
 		force_particle = np.zeros((len(self.x), 2))
 
 		for i in range(len(self.edges)):
-			# a_minus_b = x[self.edges[i,0]] - x[self.edges[i,1]]
-			# a_minus_b_normal = np.linalg.norm(a_minus_b)
-			# displacement = a_minus_b_normal - self.rest_length[i]
-			# spring_forces = self.stiffness * displacement * a_minus_b / a_minus_b_normal
 
 			spring_forces = -self.stiffness * (np.linalg.norm(x[self.edges[i,0]] - x[self.edges[i,1]]) - self.rest_length[i]) * (x[self.edges[i,0]] - x[self.edges[i,1]]) / np.linalg.norm(x[self.edges[i,0]] - x[self.edges[i,1]])
 
@@ -140,41 +136,6 @@ class particle_system:
 		gravity_force_vector = np.zeros((len(self.x), 2))
 		gravity_force_vector[:, 1] = self.gravity * self.mass[:,1]
 		force_particle += gravity_force_vector + damping_forces
-
-
-
-		# a_minus_b = x[self.edges[:,0]] - x[self.edges[:,1]]
-		# # print("rest length: ", self.rest_length)
-		# a_minus_b_normal = np.linalg.norm(a_minus_b, axis=1)
-		# # print("a_minus_b_normal: ", a_minus_b_normal)
-		# a_minus_b_normal_reshaped = a_minus_b_normal.reshape(-1, 1)
-
-		# displacement = (a_minus_b_normal - self.rest_length).reshape(-1, 1)
-		# spring_forces = -self.stiffness * displacement * a_minus_b / a_minus_b_normal_reshaped
-		# print("spring forces: ", spring_forces)
-
-		# #i need to calculate the relative velocity of both particles?
-		# damping_forces = -self.damping * v
-
-		# print("damping forces: ", damping_forces)
-
-		# # print("this is the mass: ", self.mass)
-		# gravity_forces = self.gravity * self.mass
-		# print("gravity forces: ", gravity_forces)
-		# gravity_force_vector = np.zeros((len(self.x), 2))
-		# gravity_force_vector[:, 1] = gravity_forces[:,1]
-		# # print("gravity force vector: ", gravity_force_vector)
-
-		# total_edge_forces = np.zeros_like(gravity_force_vector)
-		# np.add.at(total_edge_forces, self.edges[:, 0], spring_forces + damping_forces)
-		# np.subtract.at(total_edge_forces, self.edges[:, 1], spring_forces + damping_forces)
-
-		# print("damping matrix", self.compute_stiffness_matrix(x))
-
-		# force_particle = total_edge_forces + gravity_force_vector
-
-		print("force particle: ", force_particle)
-
 		return force_particle
 	
 	def derivs(self, x, v):
